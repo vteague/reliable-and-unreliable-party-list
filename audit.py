@@ -5,10 +5,6 @@ import math
 
 import numpy as np
 
-# Importing code from Philip's SHANGRLA repository:
-# https://github.com/pbstark/SHANGRLA/tree/main/Code
-from assertion_audit_utils import TestNonnegMean
-
 # Read summarised election data from file.
 # File has the following format:
 # VOTERS,Number of voters
@@ -45,8 +41,8 @@ def read_data(dfile):
 
     return data, tot_ballots, tot_voters
 
-# This function extracts code from audit_assertion_utils.py in the 
-# SHANGRLA repository.
+# This function extracts code from audit_assertion_utils.py in (a prior version of) the
+# SHANGRLA repository (https://github.com/pbstark/SHANGRLA).
 def sample_size_kaplan_kolgoromov(margin, prng, N, error_rate, rlimit, t=1/2, \
     g=0.1, upper_bound=1, quantile=0.5, reps=20):
 
@@ -107,12 +103,7 @@ def supermajority_sample_size(hquota, seats, tot_votes, tot_ballots, \
         sample_size =  sample_size_kaplan_kolgoromov(m, prng, tot_ballots, \
             erate, rlimit, t=t, g=g, upper_bound=share,quantile=0.5, reps=REPS)
     else:
-        # Use kaplan martingale
-        risk_fn=lambda x: TestNonnegMean.kaplan_martingale(x,N=tot_ballots)[0]
-                
-        sample_size =  TestNonnegMean.initial_sample_size(risk_fn, \
-            tot_ballots, m, erate, alpha=rlimit, t=t, upper_bound=share,\
-            reps=REPS, bias_up=True, quantile=0.5, seed=seed)
+        print("Error: function " + rfunc + " not yet incorporated. Please use Kaplan-Kolmogorov (default).")
 
     return sample_size, m, threshold, amean
 
