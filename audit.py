@@ -229,14 +229,8 @@ if __name__ == "__main__":
                     tot_ballots, erate, rlimit, t=t, g=g, upper_bound=upper,\
                     quantile=0.5,reps=REPS)
             else:
-                # Use kaplan martingale
-                risk_fn = lambda x: TestNonnegMean.kaplan_martingale(x, \
-                    N=tot_ballots)[0]
-                
-                sample_size =  TestNonnegMean.initial_sample_size(risk_fn, \
-                    tot_ballots, m, erate, alpha=rlimit, t=t, reps=None,\
-                    bias_up=True, quantile=0.5, seed=seed)
-            
+                print("Error: function " + args.rfunc + " not yet incorporated. Please use Kaplan-Kolmogorov (default).")
+
             level2_max_sample = max(sample_size, level2_max_sample)
 
             # Print out: Party name 1, Party name 2, proportion of votes
