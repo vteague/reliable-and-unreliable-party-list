@@ -11,6 +11,9 @@ from collections import namedtuple
 SocialChoiceFunctions = namedtuple('SocialChoiceFunctions', ['FREE_LIST_HAMILTONIAN', 'SAINTE_LAGUE'])
 social_choice_fns = SocialChoiceFunctions(FREE_LIST_HAMILTONIAN='free-list-hamiltonian', SAINTE_LAGUE='sainte-lague')
 
+# Fraction of every party's votes assumed to be unreliable. This is approximately average for Karlsruhe 2024.
+UNRELIABLE = 0.6
+
 # Read summarised election data from file.
 # File has the following format:
 # VOTERS,Number of voters
@@ -117,15 +120,16 @@ def supermajority_sample_size(hquota, seats, tot_votes, tot_ballots, \
 def s_l_divisor(i):
     return i - 0.5
 
-def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, rfunc):
+# unreliable is the fraction of (all parties') votes that are assumed to be unreliable.
+# In general, this is probably not a fixed fraction, but varies among parties - this is just a quick estimate.
+def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, rfunc, unreliable):
     print("Doing sainte lague")
     # Check that the seat allocation is correct
     # TODO
 
     # TODO update for usum less than the total number of votes
     # This implicitly assumes no reliable votes.
-    usum = tot_votes
-    Delta = 0
+    usum = int(tot_votes * unreliable)
 
     # Maximum votes per ballot.
     # FIXME votes-per-ballot should be either read in from the data, or set as a command-line param.
@@ -163,9 +167,13 @@ def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, er
             # Using equation 4, section 5.3 of the BW paper, the mean is
             # [U_A d(L_B)/d(W_A) - U_B + Delta]/(2 * u_sum * (m - Delta)) + 1/2
 
-            # TODO this is assuming all votes are unreliable
-            U_A = v_A
-            U_B = v_B
+            U_A = int(v_A * unreliable)
+            U_B = int(v_B * unreliable)
+
+            R_A = v_A - U_A
+            R_B = v_B - U_B
+
+            Delta = (R_A * d_L_B / d_W_A - R_B)/usum
 
             # Assorter mean
             amean = (U_A * d_L_B / d_W_A - U_B + Delta) / (2 * usum * (VMAX - Delta)) + 0.5
@@ -336,7 +344,12 @@ if __name__ == "__main__":
     if social_choice_fn == social_choice_fns.FREE_LIST_HAMILTONIAN:
         process_hamiltonian(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc)
     elif social_choice_fn == social_choice_fns.SAINTE_LAGUE:
-        process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc)
+        print("Processing Sainte-Lague, assuming all votes are unreliable.")
+        process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, 1)
+        print("Processing Sainte-Lague, assuming {} votes are unreliable.".format(UNRELIABLE))
+        process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, UNRELIABLE)
+        print("Processing Sainte-Lague, assuming {} votes are unreliable.".format(0))
+        process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, 0.01)
     else:
         print("Error: Social choice function {} not supported.".format(social_choice_fn))
 
