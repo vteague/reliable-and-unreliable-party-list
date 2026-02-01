@@ -9,7 +9,7 @@ from collections import namedtuple
 
 # This is a complicated way of making a string constant.
 SocialChoiceFunctions = namedtuple('SocialChoiceFunctions', ['FREE_LIST_HAMILTONIAN', 'SAINTE_LAGUE'])
-social_choice_fns = SocialChoiceFunctions(FREE_LIST_HAMILTONIAN='free-list-hamiltonian', SAINTE_LAGUE='saint-lague')
+social_choice_fns = SocialChoiceFunctions(FREE_LIST_HAMILTONIAN='free-list-hamiltonian', SAINTE_LAGUE='sainte-lague')
 
 # Read summarised election data from file.
 # File has the following format:
@@ -113,9 +113,85 @@ def supermajority_sample_size(hquota, seats, tot_votes, tot_ballots, \
 
     return sample_size, m, threshold, amean
 
+# Sainte Lague divisors: 0.5, 1.5, 2.5, 3.5, ...
+def s_l_divisor(i):
+    return i - 0.5
 
-def process_sainte_lague():
+def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, rfunc):
     print("Doing sainte lague")
+    # Check that the seat allocation is correct
+    # TODO
+
+    # TODO update for usum less than the total number of votes
+    # This implicitly assumes no reliable votes.
+    usum = tot_votes
+    Delta = 0
+
+    # Maximum votes per ballot.
+    # FIXME votes-per-ballot should be either read in from the data, or set as a command-line param.
+    # This is called m in the paper, which might be confusing because there are other uses of m in this code.
+    VMAX = 48
+
+    # for each pair of parties, in both directions, compute
+    # margin for pairwise Sainte-Lague assertions
+    # Assert that pw's lowest winner beat pl's highest loser.
+    # Find the max estimated sample size.
+    max_sample_size = 0
+    closest_winner = ''
+    closest_loser = ''
+
+
+    for p_A in data:
+        for p_B in data:
+
+            v_A, seats_A = data[p_A]
+            v_B, seats_B = data[p_B]
+
+            # Nothing to check if the parties are the same, or A has no winners, or B has no losers.
+            if p_A == p_B or seats_A == 0 or seats_B == VMAX:
+                continue
+
+            # Sainte-lague divisors
+            # for A's lowest winner
+            d_W_A = s_l_divisor(seats_A)
+            # for B's highest loser
+            d_L_B = s_l_divisor(seats_B+1)
+
+
+            # Compute the mean of the assorter for the Sainte-Lague assertion that party p1's seat1-th candidate defeated
+            # party p2's seats2+1-th candidate.
+            # Using equation 4, section 5.3 of the BW paper, the mean is
+            # [U_A d(L_B)/d(W_A) - U_B + Delta]/(2 * u_sum * (m - Delta)) + 1/2
+
+            # TODO this is assuming all votes are unreliable
+            U_A = v_A
+            U_B = v_B
+
+            # Assorter mean
+            amean = (U_A * d_L_B / d_W_A - U_B + Delta) / (2 * usum * (VMAX - Delta)) + 0.5
+
+            # Assorter margin
+            margin = 2 * (amean) - 1
+
+            # Upper bound on assorter values
+            # The upper bound occurs in equation 4, when b_A = m (i.e. VMAX) and b_B = 0.
+            upper = (VMAX * d_L_B / d_W_A + Delta) / (2 * (VMAX - Delta)) + 0.5
+
+            # Estimate sample size via simulation
+            if rfunc == "kaplan_kolmogorov":
+                prng = np.random.RandomState(seed)
+                sample_size = sample_size_kaplan_kolgoromov(margin, prng, tot_ballots, erate, rlimit, t=t, g=g,
+                                                            upper_bound=upper, quantile=0.5, reps=REPS)
+                print("{} lowest winner {} vs {} highest loser {}: sample size {}".format(p_A, seats_A, p_B, seats_B+1, sample_size))
+                if sample_size > max_sample_size:
+                    max_sample_size = sample_size
+                    closest_winner = p_A
+                    closest_loser = p_B
+            else:
+                print(
+                    "Error: function " + rfunc + " not yet incorporated. Please use Kaplan-Kolmogorov (default).")
+
+    print("Max sample size: {} lowest winner vs {} highest loser: sample size {}".format(closest_winner, closest_loser, max_sample_size))
 
 def process_hamiltonian(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, rfunc):
     level0_max_sample = 0
@@ -260,7 +336,7 @@ if __name__ == "__main__":
     if social_choice_fn == social_choice_fns.FREE_LIST_HAMILTONIAN:
         process_hamiltonian(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc)
     elif social_choice_fn == social_choice_fns.SAINTE_LAGUE:
-        process_sainte_lague()
+        process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc)
     else:
         print("Error: Social choice function {} not supported.".format(social_choice_fn))
 
