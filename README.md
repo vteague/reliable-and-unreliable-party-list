@@ -27,6 +27,3 @@ Command-line options:
 -s seed (default 9368663)
 -scf social choice function (default free-list-hamiltonian; sainte-lague also accepted)
 ```
-
-
-Currently, kaplan-kolmogorov is the only supported risk function.

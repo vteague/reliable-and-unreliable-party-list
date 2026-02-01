@@ -89,7 +89,7 @@ def sample_size_kaplan_kolgoromov(margin, prng, N, error_rate, rlimit, t=1/2, \
 
 
 def supermajority_sample_size(hquota, seats, tot_votes, tot_ballots, \
-    tot_voters, erate, rlimit, t, g, REPS, seed, rfunc):
+    tot_voters, erate, rlimit, t, g, REPS, seed, rfunc, v1):
 
     threshold = (hquota*seats)/tot_votes
 
@@ -112,6 +112,86 @@ def supermajority_sample_size(hquota, seats, tot_votes, tot_ballots, \
         print("Error: function " + rfunc + " not yet incorporated. Please use Kaplan-Kolmogorov (default).")
 
     return sample_size, m, threshold, amean
+
+
+def process_sainte_lague():
+    print("Doing sainte lague")
+
+def process_hamiltonian(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, rfunc):
+    level0_max_sample = 0
+    level1_max_sample = 0
+
+    # Check that party deserved all but their last seat
+    hquota = tot_votes / tot_seats
+    for p1 in data:
+        v1, a1 = data[p1]
+
+        if a1 > 1:
+            sample_size, m, th, am = supermajority_sample_size(hquota, a1 - 1, tot_votes, tot_ballots, tot_voters, erate,
+                                                               rlimit, t, g, REPS, seed, rfunc, v1)
+
+            level0_max_sample = max(sample_size, level0_max_sample)
+
+            print("Level 0,{},{},{},{},{}".format(p1, a1 - 1, th, m, sample_size))
+
+        if a1 > 0:
+            v_div_q = math.floor(tot_seats * (v1 / tot_votes))
+
+            if v_div_q > 0:
+                sample_size, m, th, am = supermajority_sample_size(hquota, v_div_q, tot_votes, tot_ballots, tot_voters,
+                                                                   erate, rlimit, t, g, REPS, seed, rfunc, v1)
+
+                print("Level 1,{},{},{},{},{}".format(p1, v_div_q, th, m, sample_size))
+
+                level1_max_sample = max(sample_size, level1_max_sample)
+
+    # for each pair of parties, in both directions, compute
+    # margin for pairwise c-diff assertion
+    level2_max_sample = 0
+    num_level2 = 0
+    for p1 in data:
+        for p2 in data:
+            if p1 == p2:
+                continue
+
+            v1, a1 = data[p1]
+            v2, a2 = data[p2]
+
+            # compute 'd'
+            d = (a1 - a2 - 1) / tot_seats
+
+            # Compute mean of assorter for assertion and margin 'm'
+            # formerly before change to include invalid ballots
+            amean = (1.0 / tot_voters) * (((v1 - v2) - tot_votes * d + TBTS * (1 + d)) / (2 * tot_seats * (1 + d)) + iballots / 2.0)
+
+            m = 2 * (amean) - 1
+
+            upper = 1 / (1 + d)
+
+            # Estimate sample size via simulation
+            sample_size = np.inf
+            if args.rfunc == "kaplan_kolmogorov":
+                prng = np.random.RandomState(seed)
+                sample_size = sample_size_kaplan_kolgoromov(m, prng, tot_ballots, erate, rlimit, t=t, g=g,
+                                                            upper_bound=upper, quantile=0.5, reps=REPS)
+            else:
+                print(
+                    "Error: function " + args.rfunc + " not yet incorporated. Please use Kaplan-Kolmogorov (default).")
+
+            level2_max_sample = max(sample_size, level2_max_sample)
+
+            # Print out: Party name 1, Party name 2, proportion of votes
+            # in Party 1's tally, proportion of votes in Party 2's tally,
+            # value of 'd', margin, and estimate of initial sample required
+            # to audit the assertion.
+            print("Level 2,{},{},{},{},{},{},{}".format(p1, p2, v1 / tot_votes, v2 / tot_votes, d, m, sample_size))
+
+            num_level2 += 1
+
+    print("Level 0, Overal ASN: {} ballots".format(level0_max_sample))
+    print("Level 1, Overal ASN: {} ballots".format(level1_max_sample))
+    print("Level 2, Overal ASN: {} ballots, {} assertions".format(level2_max_sample, num_level2))
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -177,83 +257,10 @@ if __name__ == "__main__":
     TBTS = tot_ballots*tot_seats
     iballots = tot_voters - tot_ballots
 
-    level0_max_sample = 0
-    level1_max_sample = 0
+    if social_choice_fn == social_choice_fns.FREE_LIST_HAMILTONIAN:
+        process_hamiltonian(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc)
+    elif social_choice_fn == social_choice_fns.SAINTE_LAGUE:
+        process_sainte_lague()
+    else:
+        print("Error: Social choice function {} not supported.".format(social_choice_fn))
 
-    # Check that party deserved all but their last seat
-    hquota = tot_votes/tot_seats
-    for p1 in data:
-        v1,a1 = data[p1]
-
-        if a1 > 1:
-            sample_size,m, th, am = supermajority_sample_size(hquota, a1-1, \
-                tot_votes, tot_ballots, tot_voters, erate, rlimit, t, g, \
-                REPS, seed, args.rfunc)
-            
-            level0_max_sample = max(sample_size, level0_max_sample)
-            
-            print("Level 0,{},{},{},{},{}".format(p1, a1-1, th, m, sample_size))
-
-        if a1 > 0:
-            v_div_q = math.floor(tot_seats*(v1 / tot_votes)) 
-            
-            if v_div_q > 0:
-                sample_size,m, th, am = supermajority_sample_size(hquota, \
-                    v_div_q, tot_votes, tot_ballots, tot_voters, erate, \
-                    rlimit, t, g, REPS, seed, args.rfunc)
-            
-                print("Level 1,{},{},{},{},{}".format(p1, v_div_q, th, \
-                    m, sample_size))
-
-                level1_max_sample = max(sample_size, level1_max_sample)
-
-
-    # for each pair of parties, in both directions, compute
-    # margin for pairwise c-diff assertion
-    level2_max_sample = 0
-    num_level2 = 0
-    for p1 in data:
-        for p2 in data:
-            if p1 == p2:
-                continue
-
-            v1,a1 = data[p1]
-            v2,a2 = data[p2]
-
-            # compute 'd'
-            d = (a1 - a2 - 1)/tot_seats
-
-            # Compute mean of assorter for assertion and margin 'm'
-            # formerly before change to include invalid ballots
-            amean = (1.0/tot_voters) * (((v1 - v2) - tot_votes*d + \
-                TBTS*(1+d))/(2*tot_seats*(1+d)) + iballots/2.0)
-
-            m = 2*(amean) - 1
-       
-            upper = 1/(1+d)
-
-            # Estimate sample size via simulation
-            sample_size = np.inf
-            if args.rfunc == "kaplan_kolmogorov":
-                prng = np.random.RandomState(seed) 
-                sample_size =  sample_size_kaplan_kolgoromov(m, prng, \
-                    tot_ballots, erate, rlimit, t=t, g=g, upper_bound=upper,\
-                    quantile=0.5,reps=REPS)
-            else:
-                print("Error: function " + args.rfunc + " not yet incorporated. Please use Kaplan-Kolmogorov (default).")
-
-            level2_max_sample = max(sample_size, level2_max_sample)
-
-            # Print out: Party name 1, Party name 2, proportion of votes
-            # in Party 1's tally, proportion of votes in Party 2's tally,
-            # value of 'd', margin, and estimate of initial sample required
-            # to audit the assertion.
-            print("Level 2,{},{},{},{},{},{},{}".format(p1, p2, v1/tot_votes,\
-                v2/tot_votes, d, m, sample_size))
-
-            num_level2 += 1
-
-    print("Level 0, Overal ASN: {} ballots".format(level0_max_sample))
-    print("Level 1, Overal ASN: {} ballots".format(level1_max_sample))
-    print("Level 2, Overal ASN: {} ballots, {} assertions".format(\
-        level2_max_sample, num_level2))
