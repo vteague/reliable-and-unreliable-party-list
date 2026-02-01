@@ -5,6 +5,12 @@ import math
 
 import numpy as np
 
+from collections import namedtuple
+
+# This is a complicated way of making a string constant.
+SocialChoiceFunctions = namedtuple('SocialChoiceFunctions', ['FREE_LIST_HAMILTONIAN', 'SAINTE_LAGUE'])
+social_choice_fns = SocialChoiceFunctions(FREE_LIST_HAMILTONIAN='free-list-hamiltonian', SAINTE_LAGUE='saint-lague')
+
 # Read summarised election data from file.
 # File has the following format:
 # VOTERS,Number of voters
@@ -138,6 +144,9 @@ if __name__ == "__main__":
     parser.add_argument('-s', action='store', dest='seed', \
         default=9368663)
 
+    # Input: social choice function (default is free-list-hamiltonian; sainte-lague also allowed)
+    parser.add_argument('-scf', action='store', dest='social_choice_fn', default=social_choice_fns.FREE_LIST_HAMILTONIAN)
+
     args = parser.parse_args()
 
     # data is a mapping between party name and a (votes, seats) tuple
@@ -154,14 +163,16 @@ if __name__ == "__main__":
     REPS = int(args.reps)
     t = float(args.t)
     g = float(args.g)
-    
+
+    social_choice_fn = args.social_choice_fn
+
     for p,(v,s) in data.items():
         tot_votes += v
         tot_seats += s
 
     print("{} seats, {} voters, {} parties, {} valid ballots, "\
-        "{} total votes".format(tot_seats, tot_voters, len(data), \
-        tot_ballots, tot_votes)) 
+        "{} total votes, social choice function {}".format(tot_seats, tot_voters, len(data), \
+        tot_ballots, tot_votes, social_choice_fn))
 
     TBTS = tot_ballots*tot_seats
     iballots = tot_voters - tot_ballots
