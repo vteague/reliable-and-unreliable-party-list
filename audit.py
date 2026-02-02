@@ -127,8 +127,7 @@ def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, er
     # Check that the seat allocation is correct
     # TODO
 
-    # TODO update for usum less than the total number of votes
-    # This implicitly assumes no reliable votes.
+    # Total unreliable votes
     usum = int(tot_votes * unreliable)
 
     # Maximum votes per ballot.
@@ -349,7 +348,7 @@ if __name__ == "__main__":
         print("Processing Sainte-Lague, assuming {} votes are unreliable.".format(UNRELIABLE))
         process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, UNRELIABLE)
         print("Processing Sainte-Lague, assuming {} votes are unreliable.".format(0))
-        process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, 0.01)
+        process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, 0.9)
     else:
         print("Error: Social choice function {} not supported.".format(social_choice_fn))
 
