@@ -289,7 +289,7 @@ def process_hamiltonian(data, tot_votes, tot_seats, tot_ballots, tot_voters, era
             sample_size = np.inf
             if args.rfunc == "kaplan_kolmogorov":
                 prng = np.random.RandomState(seed)
-                sample_size = sample_size_kaplan_kolgoromov(m, prng, tot_ballots, erate, rlimit, t=t, g=g,
+                sample_size = sample_size_kaplan_kolmogorov(m, prng, tot_ballots, erate, rlimit, t=t, g=g,
                                                             upper_bound=upper, quantile=0.5, reps=REPS)
             else:
                 print(
