@@ -221,7 +221,7 @@ def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, er
             # Estimate sample size via simulation
             if rfunc == "kaplan_kolmogorov":
                 prng = np.random.RandomState(seed)
-                sample_size = sample_size_kaplan_kolgoromov(margin, prng, tot_ballots, erate, rlimit, t=t, g=g,
+                sample_size = sample_size_kaplan_kolmogorov(margin, prng, tot_ballots, erate, rlimit, t=t, g=g,
                                                             upper_bound=upper, quantile=0.5, reps=REPS)
                 print("{} lowest winner {} vs {} highest loser {}: sample size {}".format(p_A, seats_A, p_B, seats_B+1, sample_size))
                 if sample_size > max_sample_size:
