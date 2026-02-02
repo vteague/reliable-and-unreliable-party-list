@@ -14,6 +14,11 @@ social_choice_fns = SocialChoiceFunctions(FREE_LIST_HAMILTONIAN='free-list-hamil
 # Fraction of every party's votes assumed to be unreliable. This is approximately average for Karlsruhe 2024.
 UNRELIABLE = 0.6
 
+# Maximum votes per ballot.
+# FIXME votes-per-ballot should be either read in from the data, or set as a command-line param.
+# This is called m in the paper, which might be confusing because there are other uses of m in this code.
+VMAX = 48
+
 # Read summarised election data from file.
 # File has the following format:
 # VOTERS,Number of voters
@@ -56,7 +61,18 @@ def sample_size_kaplan_kolgoromov(margin, prng, N, error_rate, rlimit, t=1/2, \
     g=0.1, upper_bound=1, quantile=0.5, reps=20):
 
     clean = 1.0/(2 - margin/upper_bound)
-    one_vote_over = (1-0.5)/(2-margin/upper_bound) 
+    # FIXME think about whether this one_vote_over is correct for multi-vote settings, or whether we
+    # should be multiplying by VMAX.
+    # assorter value for the single overstatement discrepancy, i.e. when the CVR contains the
+    # winner and the MVR is blank/zero.
+    one_vote_over = (1-0.5)/(2-margin/upper_bound)
+    # but in general (VT) a single vote may give VMAX votes to the winner.
+    # See Eq. 8 of the BW audit paper, and consider whether we should be introducing 'error_rate'
+    # single-overstatement errors or 'error_rate' VMAX-overstatement errors.
+    # I'm not sure the above expression is right except when upper_bound = 1. Based on Eq 8 of
+    # the BW paper, I think it should be 0.5 / (2*upper_bound - margin), which should be right
+    # for all voting types, because it's what you get when the CVR is maximal (and hence exactly
+    # cancels out the upper bound) and the MVR is neutral (and hence adds 0.5 in the numerator).
 
     samples = [0]*reps
 
@@ -130,11 +146,6 @@ def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, er
     # Total unreliable votes
     usum = int(tot_votes * unreliable)
 
-    # Maximum votes per ballot.
-    # FIXME votes-per-ballot should be either read in from the data, or set as a command-line param.
-    # This is called m in the paper, which might be confusing because there are other uses of m in this code.
-    VMAX = 48
-
     # for each pair of parties, in both directions, compute
     # margin for pairwise Sainte-Lague assertions
     # Assert that pw's lowest winner beat pl's highest loser.
@@ -174,7 +185,7 @@ def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, er
 
             Delta = (R_A * d_L_B / d_W_A - R_B)/usum
 
-            # Assorter mean
+            # Ballot-pollikng assorter mean
             amean = (U_A * d_L_B / d_W_A - U_B + Delta) / (2 * usum * (VMAX - Delta)) + 0.5
 
             # Assorter margin
