@@ -208,21 +208,35 @@ def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, er
 
             Delta = (R_A * d_L_B / d_W_A - R_B)/usum
 
-            # Ballot-pollikng assorter mean
+            # Ballot-polling assorter mean
             amean = (U_A * d_L_B / d_W_A - U_B + Delta) / (2 * usum * (VMAX - Delta)) + 0.5
 
-            # Assorter margin
+            # Ballot-polling assorter margin
+            # This is \nu_u in the paper.
+            # FIXME note actually this is 2*\nu_u from the paper.
             margin = 2 * (amean) - 1
 
             # Upper bound on assorter values
             # The upper bound occurs in equation 4, when b_A = m (i.e. VMAX) and b_B = 0.
             upper = (VMAX * d_L_B / d_W_A + Delta) / (2 * (VMAX - Delta)) + 0.5
 
+            # (Apparent) mean for the comparison assorter (i.e. assuming no discrepancies).
+            # Setting c=b in Eq. 8:
+            mean_comparison = upper / (2*upper - margin)
+
+            # Ballot-comprison assorter mean
+            # FIXME note again complication around a factor of 2.
+            margin_comparison = 2 * mean_comparison - 1
+
+            # Upper bound for the comparison assorter, occurring when the CVR has VMAX for the winner
+            # and the MVR has VMAX for the loser. Using Eq 8:
+            upper_comparison = 3 * upper / (2*upper - margin)
+
             # Estimate sample size via simulation
             if rfunc == "kaplan_kolmogorov":
                 prng = np.random.RandomState(seed)
-                sample_size = sample_size_kaplan_kolmogorov(margin, prng, tot_ballots, erate, rlimit, t=t, g=g,
-                                                            upper_bound=upper, quantile=0.5, reps=REPS)
+                sample_size = sample_size_kaplan_kolmogorov_shangrla_update(margin=margin_comparison, prng=prng, N=tot_ballots,
+                                       error_rate=erate, rlimit=rlimit, t=t, g=g, upper_bound=upper_comparison, quantile=0.5, reps=REPS)
                 print("{} lowest winner {} vs {} highest loser {}: sample size {}".format(p_A, seats_A, p_B, seats_B+1, sample_size))
                 if sample_size > max_sample_size:
                     max_sample_size = sample_size
@@ -232,7 +246,7 @@ def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, er
                 print(
                     "Error: function " + rfunc + " not yet incorporated. Please use Kaplan-Kolmogorov (default).")
 
-    print("Max sample size: {} lowest winner vs {} highest loser: sample size {}".format(closest_winner, closest_loser, max_sample_size))
+    print("Max sample size: {} lowest winner vs {} highest loser: sample size {}\n\n".format(closest_winner, closest_loser, max_sample_size))
 
 def process_hamiltonian(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, rfunc):
     level0_max_sample = 0
@@ -377,11 +391,11 @@ if __name__ == "__main__":
     if social_choice_fn == social_choice_fns.FREE_LIST_HAMILTONIAN:
         process_hamiltonian(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc)
     elif social_choice_fn == social_choice_fns.SAINTE_LAGUE:
+        print("Processing Sainte-Lague, assuming {} votes are unreliable.".format(0.001))
+        process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, 0.001)
         print("Processing Sainte-Lague, assuming all votes are unreliable.")
         process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, 1)
         print("Processing Sainte-Lague, assuming {} votes are unreliable.".format(UNRELIABLE))
         process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, UNRELIABLE)
-        print("Processing Sainte-Lague, assuming {} votes are unreliable.".format(0))
-        process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, 0.9)
     else:
         print("Error: Social choice function {} not supported.".format(social_choice_fn))
