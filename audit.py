@@ -19,6 +19,11 @@ UNRELIABLE = 0.6
 # This is called m in the paper, which might be confusing because there are other uses of m in this code.
 VMAX = 48
 
+# Download from https://github.com/pbstark/SHANGRLA/blob/main/shangrla/core/NonnegMean.py
+# Alternatively, comment this out and use sample_size_kaplan_kolmogorov rather than
+# sample_size_kaplan_kolmogorov_shangrla_update.
+from shangrla.core.NonnegMean import NonnegMean
+
 # Read summarised election data from file.
 # File has the following format:
 # VOTERS,Number of voters
@@ -57,7 +62,7 @@ def read_data(dfile):
 
 # This function extracts code from audit_assertion_utils.py in (a prior version of) the
 # SHANGRLA repository (https://github.com/pbstark/SHANGRLA).
-def sample_size_kaplan_kolgoromov(margin, prng, N, error_rate, rlimit, t=1/2, \
+def sample_size_kaplan_kolmogorov(margin, prng, N, error_rate, rlimit, t=1/2, \
     g=0.1, upper_bound=1, quantile=0.5, reps=20):
 
     clean = 1.0/(2 - margin/upper_bound)
@@ -106,6 +111,22 @@ def sample_size_kaplan_kolgoromov(margin, prng, N, error_rate, rlimit, t=1/2, \
 
     return np.quantile(samples, quantile)
 
+# 'estim' is the initital estimate of the population mean, which is optional and defaults to fixed_alternative_mean.
+# eta is ???
+def sample_size_kaplan_kolmogorov_shangrla_update(margin, prng, N, error_rate, rlimit, t=1/2, \
+    g=0.1, upper_bound=1, quantile=0.5, reps=20):
+
+    # Same generation of population as old code.
+    clean = 1.0/(2 - margin/upper_bound)
+    one_vote_over = (1-0.5)/(2-margin/upper_bound)
+    pop = clean * np.ones(N)
+    # TODO we probably don't have to insert these at random places - we can just put error_rate*N errors at the front.
+    inx = (prng.random(size=N) <= error_rate)  # randomly allocate errors
+    pop[inx] = one_vote_over
+
+    test = NonnegMean(test=NonnegMean.kaplan_kolmogorov, u = upper_bound, N = N, t = t, g=g)
+    sample_size = test.sample_size(x=pop, alpha=rlimit, reps=reps, quantile=quantile)
+    return sample_size
 
 def supermajority_sample_size(hquota, seats, tot_votes, tot_ballots, \
     tot_voters, erate, rlimit, t, g, REPS, seed, rfunc, v1):
@@ -124,8 +145,10 @@ def supermajority_sample_size(hquota, seats, tot_votes, tot_ballots, \
     # Estimate sample size via simulation
     sample_size = np.inf
     if rfunc == "kaplan_kolmogorov":
-        prng = np.random.RandomState(seed) 
-        sample_size =  sample_size_kaplan_kolgoromov(m, prng, tot_ballots, \
+        prng = np.random.RandomState(seed)
+        # FIXME - allow the switch more elegantly.
+        sample_size =  sample_size_kaplan_kolmogorov_shangrla_update(amean, prng, tot_ballots, \
+        #sample_size =  sample_size_kaplan_kolmogorov(m, prng, tot_ballots, \
             erate, rlimit, t=t, g=g, upper_bound=share,quantile=0.5, reps=REPS)
     else:
         print("Error: function " + rfunc + " not yet incorporated. Please use Kaplan-Kolmogorov (default).")
@@ -362,4 +385,3 @@ if __name__ == "__main__":
         process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, 0.9)
     else:
         print("Error: Social choice function {} not supported.".format(social_choice_fn))
-
