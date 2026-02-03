@@ -224,7 +224,7 @@ def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, er
             R_B = v_B - U_B
 
             # Definition of Delta from the BW paper.
-            Delta = R_A * d_L_B / d_W_A - R_B
+            Delta = (R_A * d_L_B / d_W_A - R_B) / usum
 
             # Upper bound on ballot-polling assorter.
             # This is u_A,B in the paper (Eq 4).
@@ -415,11 +415,13 @@ if __name__ == "__main__":
     if social_choice_fn == social_choice_fns.FREE_LIST_HAMILTONIAN:
         process_hamiltonian(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc)
     elif social_choice_fn == social_choice_fns.SAINTE_LAGUE:
-        print("Processing Sainte-Lague, assuming {} votes are unreliable.".format(0.001))
-        process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, 0.001)
         print("Processing Sainte-Lague, assuming all votes are unreliable.")
         process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, 1)
+        print("Processing Sainte-Lague, assuming {} votes are unreliable.".format(0.8))
+        process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, 0.8)
         print("Processing Sainte-Lague, assuming {} votes are unreliable.".format(UNRELIABLE))
         process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, UNRELIABLE)
+        print("Processing Sainte-Lague, assuming {} votes are unreliable.".format(0.4))
+        process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, 0.4)
     else:
         print("Error: Social choice function {} not supported.".format(social_choice_fn))
