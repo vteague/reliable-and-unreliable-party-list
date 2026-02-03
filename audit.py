@@ -180,7 +180,6 @@ def s_l_divisor(i):
 # unreliable is the fraction of (all parties') votes that are assumed to be unreliable.
 # In general, this is probably not a fixed fraction, but varies among parties - this is just a quick estimate.
 def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, rfunc, unreliable):
-    print("Doing sainte lague")
     # Check that the seat allocation is correct
     # TODO
 
@@ -261,7 +260,7 @@ def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, er
                 prng = np.random.RandomState(seed)
                 sample_size = sample_size_comparison_assorter(margin=margin_comparison, one_over=vmax_over,  prng=prng, N=tot_ballots,
                                                               error_rate=erate, rlimit=rlimit, t=t, g=g, upper_bound=upper_comparison, quantile=0.5, reps=REPS)
-                print("{} lowest winner {} vs {} highest loser {}: sample size {}".format(p_A, seats_A, p_B, seats_B+1, sample_size))
+                # print("{} lowest winner {} vs {} highest loser {}: sample size {}".format(p_A, seats_A, p_B, seats_B+1, sample_size))
                 if sample_size > max_sample_size:
                     max_sample_size = sample_size
                     closest_winner = p_A
@@ -417,11 +416,7 @@ if __name__ == "__main__":
     elif social_choice_fn == social_choice_fns.SAINTE_LAGUE:
         print("Processing Sainte-Lague, assuming all votes are unreliable.")
         process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, 1)
-        print("Processing Sainte-Lague, assuming {} votes are unreliable.".format(0.8))
-        process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, 0.8)
         print("Processing Sainte-Lague, assuming {} votes are unreliable.".format(UNRELIABLE))
         process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, UNRELIABLE)
-        print("Processing Sainte-Lague, assuming {} votes are unreliable.".format(0.4))
-        process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, 0.4)
     else:
         print("Error: Social choice function {} not supported.".format(social_choice_fn))
