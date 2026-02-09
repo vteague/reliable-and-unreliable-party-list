@@ -2,7 +2,8 @@ Auditing Free List Hamiltonian elections, with extensions to Sainte Laguë.
 -----------------------------------------
 
 The main branch of this repository contains code for determining the set of assertions required to audit the distribution of seats in a Free List Hamiltonian election. 
-The actual sampling code is copied from (an older version of) Philip Stark's [SHANGRLA audit tools](https://github.com/pbstark/SHANGRLA).
+The actual sampling code is copied from Philip Stark's [SHANGRLA audit tools](https://github.com/pbstark/SHANGRLA). Check out the `primaries` branch and
+copy the 
 
 The Sainte-Laguë branch directly uses (the current version of) the SHANGRLA code. Check out that branch and use
 ```

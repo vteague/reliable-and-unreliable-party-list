@@ -20,9 +20,13 @@ UNRELIABLE = 0.6
 VMAX = 48
 
 # Download from https://github.com/pbstark/SHANGRLA/blob/main/shangrla/core/NonnegMean.py
-# Alternatively, comment this out and use sample_size_kaplan_kolmogorov rather than
-# sample_size_kaplan_kolmogorov_shangrla_update.
+# or install as instructed in the README.
 from shangrla.core.NonnegMean import NonnegMean
+# Alternatively, for Free List Hamiltonian elections, comment out the above and uncomment the import below.
+
+# Importing code from Philip's SHANGRLA repository, `primaries` branch:
+# https://github.com/pbstark/SHANGRLA/tree/main/Code
+# from assertion_audit_utils import TestNonnegMean
 
 # Read summarised election data from file.
 # File has the following format:
@@ -60,24 +64,15 @@ def read_data(dfile):
 
     return data, tot_ballots, tot_voters
 
-# This function extracts code from audit_assertion_utils.py in (a prior version of) the
+# This function extracts code from audit_assertion_utils.py in (the "primaries" branch of) the
 # SHANGRLA repository (https://github.com/pbstark/SHANGRLA).
 def sample_size_kaplan_kolmogorov(margin, prng, N, error_rate, rlimit, t=1/2, \
     g=0.1, upper_bound=1, quantile=0.5, reps=20):
 
     clean = 1.0/(2 - margin/upper_bound)
-    # FIXME think about whether this one_vote_over is correct for multi-vote settings, or whether we
-    # should be multiplying by VMAX.
-    # assorter value for the single overstatement discrepancy, i.e. when the CVR contains the
-    # winner and the MVR is blank/zero.
+    # TODO think about whether this one_vote_over is correct for multi-vote settings.
+    # Not currently checked for Sainte-Laguë.
     one_vote_over = (1-0.5)/(2-margin/upper_bound)
-    # but in general (VT) a single vote may give VMAX votes to the winner.
-    # See Eq. 8 of the BW audit paper, and consider whether we should be introducing 'error_rate'
-    # single-overstatement errors or 'error_rate' VMAX-overstatement errors.
-    # I'm not sure the above expression is right except when upper_bound = 1. Based on Eq 8 of
-    # the BW paper, I think it should be 0.5 / (2*upper_bound - margin), which should be right
-    # for all voting types, because it's what you get when the CVR is maximal (and hence exactly
-    # cancels out the upper bound) and the MVR is neutral (and hence adds 0.5 in the numerator).
 
     samples = [0]*reps
 
@@ -111,8 +106,6 @@ def sample_size_kaplan_kolmogorov(margin, prng, N, error_rate, rlimit, t=1/2, \
 
     return np.quantile(samples, quantile)
 
-# 'estim' is the initital estimate of the population mean, which is optional and defaults to fixed_alternative_mean.
-# eta is ???
 # Inputs:
 # margin: the assorter margin, i.e. twice the assorter mean minus 1.
 # one_over: the value of the assorter when the CVR has maximum support for the winner and the MVR (manually-observed ballot)
@@ -163,17 +156,14 @@ def supermajority_sample_size(hquota, seats, tot_votes, tot_ballots, \
     sample_size = np.inf
     if rfunc == "kaplan_kolmogorov":
         prng = np.random.RandomState(seed)
-        # FIXME - allow the switch more elegantly.
-
-        one_vote_over = (1 - 0.5) / (2 - margin / upper_bound)
-        sample_size =  sample_size_comparison_assorter(amean, one_over=one_vote_over, prng=prng, N=tot_ballots, \
+        sample_size =  sample_size_kaplan_kolmogorov(amean, prng=prng, N=tot_ballots, \
                            error_rate=erate, rlimit=rlimit, t=t, g=g, upper_bound=share, quantile=0.5, reps=REPS)
     else:
         print("Error: function " + rfunc + " not yet incorporated. Please use Kaplan-Kolmogorov (default).")
 
     return sample_size, m, threshold, amean
 
-# Sainte Lague divisors: 1, 3, 5, 7, ...
+# Sainte Laguë divisors: 1, 3, 5, 7, ...
 def s_l_divisor(i):
     return 2*i - 1
 
@@ -195,7 +185,7 @@ def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, er
     closest_winner = ''
     closest_loser = ''
 
-    # For each (ordered) pair of parties, compute margin for pairwise Sainte-Lague assertions
+    # For each (ordered) pair of parties, compute margin for pairwise Sainte-Laguë assertions
     # Assert that A's lowest winner beat B's highest loser.
     # Find the overall max estimated sample size.
     for p_A in data:
@@ -208,7 +198,7 @@ def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, er
             if p_A == p_B or seats_A == 0 or seats_B == VMAX:
                 continue
 
-            # Sainte-lague divisors
+            # Sainte-Laguë divisors
             # for A's lowest winner
             d_W_A = s_l_divisor(seats_A)
             # for B's highest loser
@@ -414,7 +404,7 @@ if __name__ == "__main__":
     if social_choice_fn == social_choice_fns.FREE_LIST_HAMILTONIAN:
         process_hamiltonian(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc)
     elif social_choice_fn == social_choice_fns.SAINTE_LAGUE:
-        print("Processing Sainte-Lague, assuming all votes are unreliable.")
+        print("Processing Sainte-Laguë, assuming all votes are unreliable.")
         process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, 1)
         print("Processing Sainte-Lague, assuming {} votes are unreliable.".format(UNRELIABLE))
         process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, erate, rlimit, t, g, REPS, seed, args.rfunc, UNRELIABLE)
