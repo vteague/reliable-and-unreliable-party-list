@@ -1,28 +1,26 @@
 Auditing Free List Hamiltonian elections, with extensions to Sainte Laguë.
 -----------------------------------------
 
-The main branch of this repository contains code for determining the set of assertions required to audit the distribution of seats in a Free List Hamiltonian election. 
-The actual sampling code is copied from Philip Stark's [SHANGRLA audit tools](https://github.com/pbstark/SHANGRLA). Check out the `primaries` branch and
-copy the 
+The main branch of this repository contains code for determining the set of assertions required to audit the distribution 
+of seats in a  Sainte-Laguë party-list election where voters may cast complex ballots that mix their
+votes among different party lists.
 
-The Sainte-Laguë branch directly uses (the current version of) the SHANGRLA code. Check out that branch and use
+This code was used to compute the estimates in the paper "Assorter based RLAs for Complex
+ Sainte-Laguë elections: Reducing sample sizes by trusting manually counted ballots," by Budurushi,
+Hilt, Mack, Teague and Volkamer. Currently only a fixed average fraction of untrusted ballots is supported
+in the sample size estimation.
+
+The actual sampling code uses Philip Stark's [SHANGRLA audit tools](https://github.com/pbstark/SHANGRLA). 
+Run
 ```
 pip3 install git+https://github.com/pbstark/SHANGRLA.git@main
 ```
 to install SHANGRLA. 
 
 Data has been provided for 
-- a local election in Hesse in 2016, summarised from [Hesse online sources](https://www.statistik-hessen.de/k2016/html/index.htm),
 - local elections in Karlsruhe, 2019 and 2024,
-- other German local elections, 2024, though not in a format currently read by the code.
-- 
-A script `run_kk_hesse.sh` has been provided for running the experiments in the paper [Assertion-based approaches to auditing complex elections](https://arxiv.org/abs/2107.11903).
-It expects directories called `output_[n]pc` for n = 5, 10, 20.
-
-Usage (Free List Hamiltonian example with 0 error rate and 5% risk limit): 
-```
-python3 audit.py -d data/Local_Hesse_2016/Bergstrasse.csv -r 0.05 -g 0.1 -e 0 -reps 1 
-```
+- other German local elections, 2024, though not in a format currently read by the code,
+- an artificial contest based on Karlsruhe data, but with a very small margin. 
 
 Usage (Sainte Laguë example with 0 error rate and 5% risk limit):
 ```
@@ -40,4 +38,11 @@ Complete command-line options:
 -reps number of repeats of random test (default 20)
 -s seed (default 9368663)
 -scf social choice function (default free-list-hamiltonian; sainte-lague also accepted)
+```
+
+To replicate the simulation summarised in Table 1 of the paper, run
+```
+python3 audit.py -d data/Karlsruhe/2024_local-council_Karlsruhe.csv -r 0.05 -g 0.1 -e 0 -reps 1 -scf sainte-lague 
+python3 audit.py -d data/Karlsruhe/2019_local-council_Karlsruhe.csv -r 0.05 -g 0.1 -e 0 -reps 1 -scf sainte-lague 
+python3 audit.py -d data/Karlsruhe/artificial_close_contest.csv -r 0.05 -g 0.1 -e 0 -reps 1 -scf sainte-lague 
 ```
