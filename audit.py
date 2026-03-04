@@ -213,7 +213,7 @@ def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, er
             R_B = v_B - U_B
 
             # Definition of Delta from the BW paper.
-            Delta = (R_A * d_L_B / d_W_A - R_B)
+            Delta = (R_A * d_L_B / d_W_A - R_B) / utot
 
             # Upper bound on ballot-polling assorter.
             # This is u_A,B in the paper (Eq 5).
@@ -243,14 +243,14 @@ def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, er
 
             # Value of the comparison assorter when the CVR has VMAX votes and the MVR is blank.
             # This is the equivalent of a one-vote overstatement in simple plurality. See Eq 10 in the BW paper.
-            vmax_over = VMAX / 2 / (VMAX - Delta) / (2*upper - margin)
+            vmax_over = VMAX / (2 * (VMAX - Delta) * (2*upper - margin))
 
             # Estimate sample size via simulation
             if rfunc == "kaplan_kolmogorov":
                 prng = np.random.RandomState(seed)
                 sample_size = sample_size_comparison_assorter(margin=margin_comparison, one_over=vmax_over,  prng=prng, N=tot_ballots,
                                                               error_rate=erate, rlimit=rlimit, t=t, g=g, upper_bound=upper_comparison, quantile=0.5, reps=REPS)
-                # print("{} lowest winner {} vs {} highest loser {}: sample size {}".format(p_A, seats_A, p_B, seats_B+1, sample_size))
+                #print("{} lowest winner {} vs {} highest loser {}: sample size {}".format(p_A, seats_A, p_B, seats_B+1, sample_size))
                 if sample_size > max_sample_size:
                     max_sample_size = sample_size
                     closest_winner = p_A
@@ -395,8 +395,8 @@ if __name__ == "__main__":
         tot_seats += s
 
     print("{} seats, {} voters, {} parties, {} valid ballots, "\
-        "{} total votes, social choice function {}".format(tot_seats, tot_voters, len(data), \
-        tot_ballots, tot_votes, social_choice_fn))
+        "{} total votes, social choice function {}, risk limit {}, error rate {}".format(tot_seats, tot_voters, len(data), \
+        tot_ballots, tot_votes, social_choice_fn, rlimit, erate))
 
     TBTS = tot_ballots*tot_seats
     iballots = tot_voters - tot_ballots
