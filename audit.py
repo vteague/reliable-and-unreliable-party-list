@@ -213,36 +213,36 @@ def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, er
             R_B = v_B - U_B
 
             # Definition of Delta from the BW paper.
-            Delta = (R_A * d_L_B / d_W_A - R_B) / usum
+            Delta = (R_A * d_L_B / d_W_A - R_B)
 
             # Upper bound on ballot-polling assorter.
             # This is u_A,B in the paper (Eq 5).
             upper = VMAX * (d_L_B / d_W_A + 1) / (2 * (VMAX - Delta))
 
             # Ballot-polling assorter mean.
-            # This is \bar(h^u_A,B) in the paper (Eq 6).
+            # This is \bar(h^u_A,B) in the paper (Eq 6-8).
             amean = (U_A * d_L_B / d_W_A - U_B) / (2 * utot * (VMAX - Delta)) \
                     + Delta / (2 * (VMAX - Delta)) \
                     + 0.5
 
-            # Ballot-polling assorter margin
-            # This is \nu_u in the BW paper (Eq 7).
+            # Apparent ballot-polling assorter margin
+            # This is \nu_u(CVRs) in the BW paper (Eq 9).
             margin = 2 * (amean) - 1
 
             # (Apparent) mean for the comparison assorter (i.e. assuming no discrepancies).
-            # Setting c=b in Eq. 4 of the BW paper:
+            # Setting c=v in Eq. 4 of the BW paper:
             mean_comparison = upper / (2*upper - margin)
 
             # Ballot-comparison assorter margin.
             margin_comparison = 2 * mean_comparison - 1
 
             # Upper bound for the comparison assorter, occurring when the MVR has VMAX for the winner
-            # (so h(b) = upper) and the CVR has VMAX for the loser (so h(c) = 0).
+            # (so h(v) = upper) and the CVR has VMAX for the loser (so h(c) = 0).
             # Using Eq 4 of the BW paper:
             upper_comparison = 2 * upper / (2*upper - margin)
 
             # Value of the comparison assorter when the CVR has VMAX votes and the MVR is blank.
-            # This is the equivalent of a one-vote overstatement in simple plurality. See Eq 8 in the BW paper.
+            # This is the equivalent of a one-vote overstatement in simple plurality. See Eq 10 in the BW paper.
             vmax_over = VMAX / 2 / (VMAX - Delta) / (2*upper - margin)
 
             # Estimate sample size via simulation
