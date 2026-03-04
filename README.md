@@ -41,8 +41,13 @@ Complete command-line options:
 ```
 
 To replicate the simulation summarised in Table 1 of the paper, run
+```shell
+python3 audit.py -d data/Karlsruhe/2024_local-council_Karlsruhe.csv -r 0.05 -g 0.1 -e 0 -reps 20 -scf sainte-lague 
+python3 audit.py -d data/Karlsruhe/2019_local-council_Karlsruhe.csv -r 0.05 -g 0.1 -e 0 -reps 20 -scf sainte-lague 
 ```
-python3 audit.py -d data/Karlsruhe/2024_local-council_Karlsruhe.csv -r 0.05 -g 0.1 -e 0 -reps 1 -scf sainte-lague 
-python3 audit.py -d data/Karlsruhe/2019_local-council_Karlsruhe.csv -r 0.05 -g 0.1 -e 0 -reps 1 -scf sainte-lague 
-python3 audit.py -d data/Karlsruhe/artificial_close_contest.csv -r 0.05 -g 0.1 -e 0 -reps 1 -scf sainte-lague 
-```
+
+For Table 2, run
+```shell
+python3 audit.py -d data/Karlsruhe/2024_local-council_Karlsruhe.csv -r 0.05 -g 0.1 -e 0.001 -reps 20 -scf sainte-lague 
+python3 audit.py -d data/Karlsruhe/2019_local-council_Karlsruhe.csv -r 0.05 -g 0.1 -e 0.001 -reps 20 -scf sainte-lague 
+````

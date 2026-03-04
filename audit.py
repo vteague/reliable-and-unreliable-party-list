@@ -213,44 +213,44 @@ def process_sainte_lague(data, tot_votes, tot_seats, tot_ballots, tot_voters, er
             R_B = v_B - U_B
 
             # Definition of Delta from the BW paper.
-            Delta = (R_A * d_L_B / d_W_A - R_B) / usum
+            Delta = (R_A * d_L_B / d_W_A - R_B) / utot
 
             # Upper bound on ballot-polling assorter.
             # This is u_A,B in the paper (Eq 5).
             upper = VMAX * (d_L_B / d_W_A + 1) / (2 * (VMAX - Delta))
 
             # Ballot-polling assorter mean.
-            # This is \bar(h^u_A,B) in the paper (Eq 6).
+            # This is \bar(h^u_A,B) in the paper (Eq 6-8).
             amean = (U_A * d_L_B / d_W_A - U_B) / (2 * utot * (VMAX - Delta)) \
                     + Delta / (2 * (VMAX - Delta)) \
                     + 0.5
 
-            # Ballot-polling assorter margin
-            # This is \nu_u in the BW paper (Eq 7).
+            # Apparent ballot-polling assorter margin
+            # This is \nu_u(CVRs) in the BW paper (Eq 9).
             margin = 2 * (amean) - 1
 
             # (Apparent) mean for the comparison assorter (i.e. assuming no discrepancies).
-            # Setting c=b in Eq. 4 of the BW paper:
+            # Setting c=v in Eq. 4 of the BW paper:
             mean_comparison = upper / (2*upper - margin)
 
             # Ballot-comparison assorter margin.
             margin_comparison = 2 * mean_comparison - 1
 
             # Upper bound for the comparison assorter, occurring when the MVR has VMAX for the winner
-            # (so h(b) = upper) and the CVR has VMAX for the loser (so h(c) = 0).
+            # (so h(v) = upper) and the CVR has VMAX for the loser (so h(c) = 0).
             # Using Eq 4 of the BW paper:
             upper_comparison = 2 * upper / (2*upper - margin)
 
             # Value of the comparison assorter when the CVR has VMAX votes and the MVR is blank.
-            # This is the equivalent of a one-vote overstatement in simple plurality. See Eq 8 in the BW paper.
-            vmax_over = VMAX / 2 / (VMAX - Delta) / (2*upper - margin)
+            # This is the equivalent of a one-vote overstatement in simple plurality. See Eq 10 in the BW paper.
+            vmax_over = VMAX / (2 * (VMAX - Delta) * (2*upper - margin))
 
             # Estimate sample size via simulation
             if rfunc == "kaplan_kolmogorov":
                 prng = np.random.RandomState(seed)
                 sample_size = sample_size_comparison_assorter(margin=margin_comparison, one_over=vmax_over,  prng=prng, N=tot_ballots,
                                                               error_rate=erate, rlimit=rlimit, t=t, g=g, upper_bound=upper_comparison, quantile=0.5, reps=REPS)
-                # print("{} lowest winner {} vs {} highest loser {}: sample size {}".format(p_A, seats_A, p_B, seats_B+1, sample_size))
+                #print("{} lowest winner {} vs {} highest loser {}: sample size {}".format(p_A, seats_A, p_B, seats_B+1, sample_size))
                 if sample_size > max_sample_size:
                     max_sample_size = sample_size
                     closest_winner = p_A
@@ -395,8 +395,8 @@ if __name__ == "__main__":
         tot_seats += s
 
     print("{} seats, {} voters, {} parties, {} valid ballots, "\
-        "{} total votes, social choice function {}".format(tot_seats, tot_voters, len(data), \
-        tot_ballots, tot_votes, social_choice_fn))
+        "{} total votes, social choice function {}, risk limit {}, error rate {}".format(tot_seats, tot_voters, len(data), \
+        tot_ballots, tot_votes, social_choice_fn, rlimit, erate))
 
     TBTS = tot_ballots*tot_seats
     iballots = tot_voters - tot_ballots
